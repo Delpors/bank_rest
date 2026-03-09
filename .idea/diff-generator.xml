@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DiffGenerationConfig">
+    <option name="sourceModelValue" value="bank_rest:bank_rest" />
+    <option name="targetDbValue" value="7a9910ba-65a3-4202-a718-6d7980ddfb8a" />
+    <option name="updateChangeLogPath" value="bank_rest/src/main/resources/db/migration/db.migration-master.yaml" />
+    <option name="updateDbConnectionName" value="c1e20e59-7708-493e-8bc2-881d539f859f" />
+  </component>
+</project>

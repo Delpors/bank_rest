@@ -1,0 +1,6 @@
+FROM postgres:latest
+LABEL authors="1101001"
+
+ENV POSTGRES_USER=sabir
+ENV POSTGRES_PASSWORD=root
+ENV POSTGRES_DB=bank_rest_db
