@@ -23,7 +23,7 @@ import java.math.BigDecimal;
 public class UserController {
     private final CardService cardService;
 
-    @GetMapping("/my")
+    @GetMapping()
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Page<CardResponse>> getMyCards(@AuthenticationPrincipal CustomUserDetails user,
                                                          @RequestParam(required = false) String search,
@@ -31,21 +31,21 @@ public class UserController {
         return ResponseEntity.ok().body(cardService.getAllUsersCards(user.getId(),search,pageable));
     }
 
-    @PostMapping("/my/{cardId}/block")
+    @PostMapping("/{cardId}/block")
     @PreAuthorize("hasRole('USER')")
     ResponseEntity<CardResponse> blockUserCard(@AuthenticationPrincipal CustomUserDetails user,
                                                @PathVariable Long cardId, CardRequest request){
         return ResponseEntity.ok().body(cardService.blockUserCard(user.getId(), cardId, request.blockedReason()));
     }
 
-    @GetMapping("/my/balance")
+    @GetMapping("/balance")
     @PreAuthorize("hasRole('USER')")
     ResponseEntity<BigDecimal> getTotalBalance(@AuthenticationPrincipal CustomUserDetails user){
 
         return ResponseEntity.ok().body(cardService.getTotalBalance(user.getId()));
     }
 
-    @PostMapping("/my/transfer")
+    @PostMapping("/transfer")
     @PreAuthorize("hasRole('USER')")
     ResponseEntity<TransactionResponse> transferBetweenCards(@AuthenticationPrincipal CustomUserDetails user,
                                                              @Valid @RequestBody TransactionRequest request){

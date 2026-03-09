@@ -21,7 +21,7 @@ public class AdminCardController {
 
     private final CardService cardService;
 
-    @PostMapping("/admin")
+    @PostMapping()
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CardResponse> createCard(@Valid @RequestBody CardRequest cardRequest){
 
@@ -33,7 +33,7 @@ public class AdminCardController {
                 .body(response);
     }
 
-    @PutMapping("/admin/{cardId}/block")
+    @PutMapping("/{cardId}/block")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CardResponse> blockCard(@PathVariable @NotNull Long cardId, @RequestBody CardRequest request){
 
@@ -42,7 +42,7 @@ public class AdminCardController {
                 .body(cardService.blockCard(cardId, request.blockedReason()));
     }
 
-    @PutMapping("/admin/{cardId}/activate")
+    @PutMapping("/{cardId}/activate")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CardResponse> activateCard(@PathVariable @NotNull Long cardId){
 
@@ -51,7 +51,7 @@ public class AdminCardController {
                 .body(cardService.activateCard(cardId));
     }
 
-    @DeleteMapping("/admin/{cardId}")
+    @DeleteMapping("/{cardId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteCard(@PathVariable @NotNull Long cardId){
         cardService.deleteCard(cardId);
@@ -59,7 +59,7 @@ public class AdminCardController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/admin/all")
+    @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<CardResponse>> getAllCards(@RequestParam(required = false) String search, Pageable pageable){
 
