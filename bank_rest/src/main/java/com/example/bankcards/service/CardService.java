@@ -66,12 +66,12 @@ public class CardService {
 
     public void deleteCard(@NotNull Long cardId) {
 
-        try {
-            cardRepository.findById(cardId);
-        } catch (CardNotFoundException e) {
-            throw new CardNotFoundException(String.format("Карта с id %d не найдена", cardId));
-        }
-        cardRepository.deleteById(cardId);
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(()->new CardNotFoundException
+                        (String.format("Карта с id %d не найдена", cardId)));
+
+        card.softDelete();
+        cardRepository.save(card);
 
     }
 
