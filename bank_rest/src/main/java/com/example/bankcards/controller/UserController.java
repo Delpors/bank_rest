@@ -4,7 +4,8 @@ import com.example.bankcards.dto.CardRequest;
 import com.example.bankcards.dto.CardResponse;
 import com.example.bankcards.dto.TransactionRequest;
 import com.example.bankcards.dto.TransactionResponse;
-import com.example.bankcards.security.CustomUserDetails;
+import com.example.bankcards.security.CustomUserDetailsService;
+import com.example.bankcards.security.UserPrincipal;
 import com.example.bankcards.service.CardService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,29 +26,30 @@ public class UserController {
 
     @GetMapping()
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Page<CardResponse>> getMyCards(@AuthenticationPrincipal CustomUserDetails user,
-                                                         @RequestParam(required = false) String search,
-                                                         Pageable pageable){
-        return ResponseEntity.ok().body(cardService.getAllUsersCards(user.getId(),search,pageable));
+    public ResponseEntity<Page<CardResponse>> getMyCards(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(required = false) String search,
+            Pageable pageable) {
+        return ResponseEntity.ok(cardService.getAllUsersCards(user.getId(), search, pageable));
     }
 
     @PostMapping("/{cardId}/block")
     @PreAuthorize("hasRole('USER')")
-    ResponseEntity<CardResponse> blockUserCard(@AuthenticationPrincipal CustomUserDetails user,
+    ResponseEntity<CardResponse> blockUserCard(@AuthenticationPrincipal UserPrincipal user,
                                                @PathVariable Long cardId, CardRequest request){
         return ResponseEntity.ok().body(cardService.blockUserCard(user.getId(), cardId, request.blockedReason()));
     }
 
     @GetMapping("/balance")
     @PreAuthorize("hasRole('USER')")
-    ResponseEntity<BigDecimal> getTotalBalance(@AuthenticationPrincipal CustomUserDetails user){
+    ResponseEntity<BigDecimal> getTotalBalance(@AuthenticationPrincipal UserPrincipal user){
 
         return ResponseEntity.ok().body(cardService.getTotalBalance(user.getId()));
     }
 
     @PostMapping("/transfer")
     @PreAuthorize("hasRole('USER')")
-    ResponseEntity<TransactionResponse> transferBetweenCards(@AuthenticationPrincipal CustomUserDetails user,
+    ResponseEntity<TransactionResponse> transferBetweenCards(@AuthenticationPrincipal UserPrincipal user,
                                                              @Valid @RequestBody TransactionRequest request){
 
         return ResponseEntity.ok().body(cardService.transferBetweenCards(user.getId(), request));
