@@ -23,8 +23,6 @@ public record UserRequest(
         user.setFullName(request.fullName);
         user.setEmail(request.email);
         user.setRol(request.role);
-        user.setId(request.userId);
-
         return user;
 
     }
