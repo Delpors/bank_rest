@@ -5,6 +5,9 @@ import com.example.bankcards.entity.User;
 import com.example.bankcards.service.CardService;
 import com.example.bankcards.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -18,13 +21,13 @@ import java.util.List;
 public class AdminUserController {
 
     private final UserService userService;
-    private final CardService cardService;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserResponse>> getAllUsers(){
+    public ResponseEntity<PagedModel<UserResponse>> getAllUsers(Pageable pageable){
 
-        return ResponseEntity.ok().body(userService.getAllUsers());
+        Page<UserResponse> page = userService.getAllUsers(pageable);
+        return ResponseEntity.ok().body(new PagedModel<>(page));
     }
 
     @PostMapping
@@ -51,7 +54,7 @@ public class AdminUserController {
         return ResponseEntity.ok().body(userService.activateUser(userId));
     }
 
-    @PutMapping("/{userId}")
+    @DeleteMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long userId){
 

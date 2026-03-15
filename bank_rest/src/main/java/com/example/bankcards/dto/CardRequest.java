@@ -7,28 +7,16 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public record CardRequest(
-    @NotBlank String cardNumber,
-    @NotBlank String cardHolderName,
-    @NotBlank LocalDateTime expireData,
-    @NotBlank CardStatus status,
-    @NotBlank BigDecimal balance,
+    String cardNumber,
+    String cardHolderName,
+    LocalDate expireDate,
+    CardStatus status,
+    BigDecimal balance,
     String blockedReason,
-    @NotNull User user
+    Long userId
 ) {
-    public static Card toEntity(CardRequest request){
-
-        return new Card(
-                request.cardNumber,
-                request.cardHolderName,
-                request.expireData,
-                request.status,
-                request.balance,
-                null,
-                request.blockedReason,
-                request.user
-        );
-    }
 }

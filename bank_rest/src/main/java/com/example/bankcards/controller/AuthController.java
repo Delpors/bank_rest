@@ -50,12 +50,15 @@ public class AuthController {
 
     @PostMapping("/register")
     ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request){
+        boolean isFirstUser = userRepository.count() == 0;
+        UserRole role = isFirstUser ? UserRole.ADMIN: UserRole.USER;
+
         User user = new User(
                 request.userName(),
                 passwordEncoder.encode(request.password()),
                 request.fullName(),
                 request.email(),
-                UserRole.USER,
+                role,
                 null
         );
 
@@ -68,7 +71,6 @@ public class AuthController {
                         user.getUserName(),
                         user.getFullName(),
                         user.getRol().toString()
-
                 )
         );
     }

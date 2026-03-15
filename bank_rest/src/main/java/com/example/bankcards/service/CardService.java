@@ -3,7 +3,9 @@ package com.example.bankcards.service;
 import com.example.bankcards.dto.*;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.Transaction;
+import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.CardNotFoundException;
+import com.example.bankcards.exception.InsufficientFundsException;
 import com.example.bankcards.exception.UnauthorizedActionException;
 import com.example.bankcards.exception.UserNotFoundException;
 import com.example.bankcards.repository.CardRepository;
@@ -13,6 +15,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.data.domain.Page;
@@ -22,7 +26,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.nio.file.AccessDeniedException;
+import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -35,7 +41,24 @@ public class CardService {
     @Transactional
     public CardResponse createCard(@Valid CardRequest request) {
 
-        Card savedCard = cardRepository.save(CardRequest.toEntity(request));
+        User user = userRepository.findById(request.userId())
+                .orElseThrow(()-> new UsernameNotFoundException
+                        (String.format
+                                ("Пользователь с id %s не найден", request.userId())));
+
+
+        Card savedCard = cardRepository.save(
+                new Card(
+                request.cardNumber(),
+                request.cardHolderName(),
+                request.expireDate(),
+                request.status(),
+                request.balance(),
+                null,
+                request.blockedReason(),
+                user
+        ));
+
         return CardResponse.fromEntity(savedCard);
     }
 
@@ -127,37 +150,49 @@ public class CardService {
     @Transactional
     public TransactionResponse transferBetweenCards(@NotNull Long userId, @Valid TransactionRequest request) {
 
-        log.info("Попытка перевода средств с карты {} на карту {}", request.fromcard(), request.toCard());
+        log.info("Попытка перевода средств с карты {} на карту {}", request.fromCardId(), request.toCardId());
 
         try {
+            Card fromCard = cardRepository.findById(request.fromCardId())
+                    .orElseThrow(()-> new CardNotFoundException(String.format("Карта с id %d не найдена", request.fromCardId())));
+            Card toCard = cardRepository.findById(request.toCardId())
+                    .orElseThrow(()-> new CardNotFoundException(String.format("Карта с id %d не найдена", request.toCardId())));
 
-            if (request.fromcard().getBalance().compareTo(request.amount()) < 0) {
-                log.warn("На карте {}, недостаточно средств, на балансе: {} рублей, запрошено {}",
-                        request.fromcard(), request.fromcard().getBalance(), request.amount());
+
+            if (fromCard.getBalance().compareTo(request.amount()) < 0) {
+                throw new InsufficientFundsException(fromCard.getId(), fromCard.getBalance(), request.amount());
             }
 
-            cardRepository.findById(request.fromcard().getId())
-                     .orElseThrow(()-> new CardNotFoundException(String.format("Карта с id %d не найдена", request.fromcard().getId())));
-            cardRepository.findById(request.toCard().getId())
-                    .orElseThrow(()-> new CardNotFoundException(String.format("Карта с id %d не найдена", request.toCard().getId())));
 
-            if (!request.fromcard().getUser().getId().equals(request.toCard().getUser().getId())){
+            if (!fromCard.getUser().getId().equals(toCard.getUser().getId())){
                 throw new AccessDeniedException("Карты не принадлежат одному пользователю");
             }
 
-            BigDecimal newFromCard = request.fromcard().getBalance().subtract(request.amount());
-            BigDecimal newToCard = request.toCard().getBalance().add(request.amount());
+            BigDecimal newFromCard = fromCard.getBalance().subtract(request.amount());
+            BigDecimal newToCard = toCard.getBalance().add(request.amount());
 
-            request.fromcard().setBalance(newFromCard);
-            request.toCard().setBalance(newToCard);
+            fromCard.setBalance(newFromCard);
+            toCard.setBalance(newToCard);
 
-            Transaction transaction = TransactionRequest.toEntity(request);
-            transactionRepository.save(transaction);
-
-            return TransactionResponse.toResponse(transaction);
+            return createTransaction(fromCard, toCard, request);
         }catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public TransactionResponse createTransaction(Card fromCard, Card toCard, TransactionRequest request){
+
+        Transaction transaction = new Transaction();
+        transaction.setTransactionNumber(generateTransactionNumber());
+        transaction.setFromCard(fromCard);
+        transaction.setToCard(toCard);
+        transaction.setAmount(request.amount());
+
+        return TransactionResponse.toResponse(transactionRepository.save(transaction));
+    }
+
+    private String generateTransactionNumber() {
+        return "TRN" + UUID.randomUUID().toString();
     }
 }
 

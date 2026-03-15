@@ -4,6 +4,7 @@ import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,7 +12,7 @@ import java.util.stream.Collectors;
 public record CardResponse(
         String cardNumber,
         String cardHolderName,
-        LocalDateTime expireData,
+        LocalDate expireDate,
         CardStatus status,
         BigDecimal balance,
         LocalDateTime blockedAt,
@@ -26,11 +27,18 @@ public record CardResponse(
                 .map(CardResponse::fromEntity)
                 .collect(Collectors.toList());
     }
+
+    public static String getCardMask(Card card){
+        return "**** **** **** " + card.getCardNumber()
+                .substring(card.getCardNumber().length()-4);
+    }
+
     public static CardResponse fromEntity(Card card){
+
         return new CardResponse(
-                card.getCardNumber(),
+                getCardMask(card),
                 card.getCardHolderName(),
-                card.getExpireData(),
+                card.getExpireDate(),
                 card.getStatus(),
                 card.getBalance(),
                 card.getBlockedAt(),

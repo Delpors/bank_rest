@@ -1,5 +1,6 @@
 package com.example.bankcards.controller;
 
+import com.example.bankcards.dto.BlockCardRequest;
 import com.example.bankcards.dto.CardRequest;
 import com.example.bankcards.dto.CardResponse;
 import com.example.bankcards.service.CardService;
@@ -11,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.web.PagedModel;
+
 
 import java.net.URI;
 
@@ -35,11 +38,11 @@ public class AdminCardController {
 
     @PutMapping("/{cardId}/block")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CardResponse> blockCard(@PathVariable @NotNull Long cardId, @RequestBody CardRequest request){
+    public ResponseEntity<CardResponse> blockCard(@PathVariable @NotNull Long cardId, @RequestBody BlockCardRequest request){
 
         return ResponseEntity
                 .ok()
-                .body(cardService.blockCard(cardId, request.blockedReason()));
+                .body(cardService.blockCard(cardId, request.blockReason()));
     }
 
     @PutMapping("/{cardId}/activate")
@@ -61,8 +64,9 @@ public class AdminCardController {
 
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Page<CardResponse>> getAllCards(@RequestParam(required = false) String search, Pageable pageable){
+    public ResponseEntity<PagedModel<CardResponse>> getAllCards(@RequestParam(required = false) String search, Pageable pageable){
 
-        return ResponseEntity.ok().body(cardService.getAllCards(search, pageable));
+        Page<CardResponse> page = cardService.getAllCards(search, pageable);
+        return ResponseEntity.ok().body(new PagedModel<>(page));
     }
 }

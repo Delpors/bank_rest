@@ -4,7 +4,6 @@ import com.example.bankcards.dto.CardRequest;
 import com.example.bankcards.dto.CardResponse;
 import com.example.bankcards.dto.TransactionRequest;
 import com.example.bankcards.dto.TransactionResponse;
-import com.example.bankcards.security.CustomUserDetailsService;
 import com.example.bankcards.security.UserPrincipal;
 import com.example.bankcards.service.CardService;
 import jakarta.validation.Valid;
@@ -19,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 
 @RestController
-@RequestMapping("/api/User/cards")
+@RequestMapping("/api/user/cards")
 @RequiredArgsConstructor
 public class UserController {
     private final CardService cardService;

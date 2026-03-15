@@ -4,6 +4,7 @@ import com.example.bankcards.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
@@ -23,15 +24,17 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UnauthorizedActionException.class)
+    @ResponseBody
     ResponseEntity<ErrorResponse> handleUnAuthorizeException(UnauthorizedActionException e){
         ErrorResponse error = new ErrorResponse(e.getMessage());
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
-    @ExceptionHandler(Exception.class)
-    ResponseEntity<ErrorResponse> handleUnAuthorizeException(Exception e){
+
+    @ExceptionHandler(InsufficientFundsException.class)
+    @ResponseBody
+    ResponseEntity<ErrorResponse> handleInsufficientFundsException(InsufficientFundsException e){
         ErrorResponse error = new ErrorResponse(e.getMessage());
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
-
 
 }

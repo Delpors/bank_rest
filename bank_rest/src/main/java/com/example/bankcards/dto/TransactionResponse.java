@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 public record TransactionResponse(
         Long id,
         String transactionNumber,
-        Card fromcard,
-        Card toCard,
+        String fromCard,
+        String toCard,
         BigDecimal amount,
         LocalDateTime createdAt
 ) {
@@ -18,8 +18,8 @@ public record TransactionResponse(
         return new TransactionResponse(
                 transaction.getId(),
                 transaction.getTransactionNumber(),
-                transaction.getFromCard(),
-                transaction.getToCard(),
+                transaction.getFromCard().getCardNumber(),
+                transaction.getToCard().getCardNumber(),
                 transaction.getAmount(),
                 transaction.getCreatedAt()
         );

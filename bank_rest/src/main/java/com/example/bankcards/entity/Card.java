@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -24,7 +25,7 @@ public class Card extends BaseEntity{
     private String cardHolderName;
 
     @Column(nullable = false)
-    private LocalDateTime expireData;
+    private LocalDate expireDate;
 
     @Column(nullable = false)
     private CardStatus status = CardStatus.ACTIVE;

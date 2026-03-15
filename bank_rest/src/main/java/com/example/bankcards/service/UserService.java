@@ -4,6 +4,8 @@ import com.example.bankcards.dto.UserResponse;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.UserNotFoundException;
 import com.example.bankcards.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,8 +19,10 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public List<UserResponse> getAllUsers() {
-        return UserResponse.listFromEntity(userRepository.findAll());
+    public Page<UserResponse> getAllUsers(Pageable pageable)
+    {
+        Page<User> users = userRepository.findAllByActiveTrue(pageable);
+        return users.map(UserResponse::fromEntity);
     }
 
     @Transactional

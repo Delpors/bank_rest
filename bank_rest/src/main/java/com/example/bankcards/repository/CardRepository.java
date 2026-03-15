@@ -16,7 +16,9 @@ public interface CardRepository extends JpaRepository<Card,Long> {
     List<Card> findByUserId(Long userId);
 
     @Query("SELECT c FROM Card c WHERE " +
-            "LOWER(c.cardNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(c.cardHolderName) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Card> searchCards(@Param("search") String search, Pageable pageable);}
+            "c.active = true AND " +
+            "(LOWER(c.cardNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(c.cardHolderName) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Card> searchCards(@Param("search") String search, Pageable pageable);
+}
 
