@@ -14,12 +14,17 @@ public record TransactionResponse(
         BigDecimal amount,
         LocalDateTime createdAt
 ) {
+    public static String getCardMask(String cardNumber){
+        return "**** **** **** " + cardNumber
+                .substring(cardNumber.length()-4);
+    }
+
     public static TransactionResponse toResponse(Transaction transaction){
         return new TransactionResponse(
                 transaction.getId(),
                 transaction.getTransactionNumber(),
-                transaction.getFromCard().getCardNumber(),
-                transaction.getToCard().getCardNumber(),
+                getCardMask(transaction.getFromCard().getCardNumber()),
+                getCardMask(transaction.getToCard().getCardNumber()),
                 transaction.getAmount(),
                 transaction.getCreatedAt()
         );
