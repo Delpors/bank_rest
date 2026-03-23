@@ -1,5 +1,6 @@
 package com.example.bankcards.controller;
 
+import com.example.bankcards.dto.UserRequest;
 import com.example.bankcards.dto.UserResponse;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.service.CardService;
@@ -32,7 +33,8 @@ public class AdminUserController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    ResponseEntity<UserResponse> createUser(@RequestBody User user){
+    ResponseEntity<UserResponse> createUser(@RequestBody UserRequest user){
+
         UserResponse response = userService.createUser(user);
 
         return ResponseEntity

@@ -15,15 +15,4 @@ public record UserRequest(
         @NotNull UserRole role,
         @NotNull Long userId
 ) {
-    public static User tuEntity(UserRequest request){
-        User user = new User();
-
-        user.setUserName(request.userName);
-        user.setPassword(request.password);
-        user.setFullName(request.fullName);
-        user.setEmail(request.email);
-        user.setRol(request.role);
-        return user;
-
-    }
 }

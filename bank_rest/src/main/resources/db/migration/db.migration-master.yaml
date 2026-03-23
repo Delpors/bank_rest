@@ -1,4 +1,4 @@
 databaseChangeLog:
   - includeAll:
-      path: classpath:/db/migration/changes/
+      path: classpath:/db/migration/db.migration-master.yaml
       errorIfMissingOrEmpty: false

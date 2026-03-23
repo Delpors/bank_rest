@@ -21,30 +21,4 @@ public record CardResponse(
         Long userId
 
 ) {
-    public static List<CardResponse> fromListOfEntity(List<Card> cards){
-
-        return cards.stream()
-                .map(CardResponse::fromEntity)
-                .collect(Collectors.toList());
-    }
-
-    public static String getCardMask(Card card){
-        return "**** **** **** " + card.getCardNumber()
-                .substring(card.getCardNumber().length()-4);
-    }
-
-    public static CardResponse fromEntity(Card card){
-
-        return new CardResponse(
-                getCardMask(card),
-                card.getCardHolderName(),
-                card.getExpireDate(),
-                card.getStatus(),
-                card.getBalance(),
-                card.getBlockedAt(),
-                card.getBlockReason(),
-                card.getId(),
-                card.getUser().getId()
-        );
-    }
 }

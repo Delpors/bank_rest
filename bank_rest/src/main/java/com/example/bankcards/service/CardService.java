@@ -37,6 +37,7 @@ public class CardService {
     private final CardRepository cardRepository;
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
+    private final CardMapper cardMapper;
 
     @Transactional
     public CardResponse createCard(@Valid CardRequest request) {
@@ -59,7 +60,7 @@ public class CardService {
                 user
         ));
 
-        return CardResponse.fromEntity(savedCard);
+        return cardMapper.toCardResponse(savedCard);
     }
 
     @Transactional
@@ -71,7 +72,7 @@ public class CardService {
                     card.block(blockReason);
                     return cardRepository.save(card);
                 })
-                .map(CardResponse::fromEntity)
+                .map(cardMapper::toCardResponse)
                 .orElseThrow(() -> new CardNotFoundException(String.format("Карта с id %d не найдена", cardId)));
     }
 
@@ -83,7 +84,7 @@ public class CardService {
                     card.activate();
                     return cardRepository.save(card);
                 })
-                .map(CardResponse::fromEntity)
+                .map(cardMapper::toCardResponse)
                 .orElseThrow(() -> new CardNotFoundException(String.format("Карта с id %d не найдена", cardId)));
     }
 
@@ -101,7 +102,7 @@ public class CardService {
     public Page<CardResponse> getAllCards(String search, Pageable pageable) {
 
         Page<Card> cards = cardRepository.searchCards(search, pageable);
-        return cards.map(CardResponse::fromEntity);
+        return cards.map(cardMapper::toCardResponse);
     }
 
     public Page<CardResponse> getAllUsersCards(@NotNull Long userId, String search, Pageable pageable) {
@@ -114,7 +115,7 @@ public class CardService {
             } else {
                 cards = cardRepository.findAllByUserId(userId, search, pageable);
             }
-            return cards.map(CardResponse::fromEntity);
+            return cards.map(cardMapper::toCardResponse);
         }else {
             throw new CardNotFoundException(String.format("Пользователь с id %d не найден", userId));
         }
@@ -144,7 +145,7 @@ public class CardService {
 
         card.block(blocReason);
         Card blockedCard = cardRepository.save(card);
-        return CardResponse.fromEntity(blockedCard);
+        return cardMapper.toCardResponse(blockedCard);
     }
 
     @Transactional
