@@ -26,6 +26,7 @@ public class UserMapper {
                 user.getUpdatedAt()
         );
     }
+
     public User tuEntity(UserRequest request){
         User user = new User();
 

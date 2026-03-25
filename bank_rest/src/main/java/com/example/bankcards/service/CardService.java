@@ -88,15 +88,10 @@ public class CardService {
                 .orElseThrow(() -> new CardNotFoundException(String.format("Карта с id %d не найдена", cardId)));
     }
 
+    @Transactional
     public void deleteCard(@NotNull Long cardId) {
 
-        Card card = cardRepository.findById(cardId)
-                .orElseThrow(()->new CardNotFoundException
-                        (String.format("Карта с id %d не найдена", cardId)));
-
-        card.softDelete();
-        cardRepository.save(card);
-
+        cardSoftDelete(cardId);
     }
 
     public Page<CardResponse> getAllCards(String search, Pageable pageable) {
@@ -181,6 +176,7 @@ public class CardService {
         }
     }
 
+    @Transactional
     public TransactionResponse createTransaction(Card fromCard, Card toCard, TransactionRequest request){
 
         Transaction transaction = new Transaction();
@@ -194,6 +190,22 @@ public class CardService {
 
     private String generateTransactionNumber() {
         return "TRN" + UUID.randomUUID().toString();
+    }
+
+    @Transactional
+    protected void cardSoftDelete(Long cardId) {
+
+        Card existingCard = cardRepository
+                .findById(cardId)
+                .orElseThrow(()->new CardNotFoundException(String.format("Карта с id %d не найдена!", cardId)));
+
+        if (existingCard.isDeleted()){
+            log.debug("Карта с id {} была удалена ранее", cardId);
+            return;
+        }
+
+        log.info("Карта с id {} удалена!",cardId);
+        existingCard.setDeleted(true);
     }
 }
 

@@ -29,13 +29,13 @@ public abstract class BaseEntity {
         return active && !deleted;
     }
 
+    public Boolean isDeleted(){
+        return !deleted;
+    }
+
     @PreUpdate
     public void onUpdate(){
         updatedAt = LocalDateTime.now();
     }
 
-    public void softDelete(){
-        this.active = false;
-        this.deleted = true;
-    }
 }
