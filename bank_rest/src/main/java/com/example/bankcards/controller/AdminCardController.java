@@ -4,6 +4,7 @@ import com.example.bankcards.dto.BlockCardRequest;
 import com.example.bankcards.dto.CardRequest;
 import com.example.bankcards.dto.CardResponse;
 import com.example.bankcards.service.CardService;
+import com.example.bankcards.service.CardServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
