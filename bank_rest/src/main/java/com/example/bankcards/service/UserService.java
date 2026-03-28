@@ -10,9 +10,14 @@ import org.springframework.data.domain.Pageable;
 public interface UserService {
 
     Page<UserResponse> getAllUsers(Pageable pageable);
+
     UserResponse createUser(UserRequest userRequest);
+
     UserResponse blockUser(Long userId);
+
     UserResponse activateUser(Long userId);
+
     void deleteUser(@NotNull Long userId);
+
     User getUserById(Long userId);
 }

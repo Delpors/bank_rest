@@ -8,6 +8,7 @@ import com.example.bankcards.service.CardServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import org.springframework.data.web.PagedModel;
 
 import java.net.URI;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/admin/cards")
 @RequiredArgsConstructor
@@ -28,13 +30,22 @@ public class AdminCardController {
     @PostMapping()
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CardResponse> createCard(@Valid @RequestBody CardRequest cardRequest){
+        log.info("Creating card: {}", cardRequest);
 
         CardResponse response = cardService.createCard(cardRequest);
+        log.info("Card created with ID: {}", response.cardId());
 
-        return ResponseEntity
-                .created(URI
-                        .create("/api/cards/admin" + response.cardId()))
+        URI location = URI.create("/api/admin/cards/" + response.cardId());
+        log.info("Location URI: {}", location);
+
+        ResponseEntity<CardResponse> responseEntity = ResponseEntity
+                .created(location)
                 .body(response);
+
+        log.info("Response status: {}", responseEntity.getStatusCode());
+
+
+        return responseEntity;
     }
 
     @PutMapping("/{cardId}/block")

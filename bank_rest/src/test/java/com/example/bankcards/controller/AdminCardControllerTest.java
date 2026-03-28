@@ -1,45 +1,112 @@
 package com.example.bankcards.controller;
 
 import com.example.bankcards.dto.CardRequest;
-import com.example.bankcards.service.CardServiceImpl;
+import com.example.bankcards.dto.CardResponse;
+import com.example.bankcards.entity.CardStatus;
+import com.example.bankcards.security.JwtAuthenticationFilter;
+import com.example.bankcards.security.JwtService;
+import com.example.bankcards.security.TestSecurityConfig;
+import com.example.bankcards.service.CardService;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(AdminCardController.class)
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+
+@WebMvcTest(value = AdminCardController.class,
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = JwtAuthenticationFilter.class
+        ))
+@Import(TestSecurityConfig.class)
 class AdminCardControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private CardServiceImpl cardService;
+    @MockitoBean
+    private CardService cardService;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private ObjectMapper  objectMapper;
 
-    @Test
+    private CardResponse cardResponse;
+    private CardRequest cardRequest;
+
+    @BeforeEach
+    void setUp() {
+         cardResponse = new CardResponse(
+                "12345678912345678912",
+                "Magomedov Magomed",
+                LocalDate.now(),
+                CardStatus.ACTIVE,
+                BigDecimal.valueOf(1000),
+                LocalDateTime.now(),
+                "d",
+                1L,
+                2L
+        );
+
+        cardRequest = new CardRequest(
+                 "12345678912345678912",
+                 "Magomedov Magomed",
+                 LocalDate.now(),
+                 CardStatus.ACTIVE,
+                 BigDecimal.valueOf(1000),
+                 "b",
+                 2L
+        );
+    }
+
+    @Nested
+    @DisplayName("POST /api/admin/cards - Create Card")
     @WithMockUser(roles = "ADMIN")
-    void createCard()  throws Exception {
-        CardRequest request = new CardRequest()
-    }
+    class CreateCardTests {
 
-    @Test
-    void blockCard() {
-    }
+        @Test
+        @DisplayName("Should create card successfully and return 201")
+        void createCardSuccessfully()  throws Exception {
+            when(cardService.createCard(any(CardRequest.class))).thenReturn(cardResponse);
 
-    @Test
-    void activateCard() {
-    }
+            mockMvc.perform(post("/api/admin/cards")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(cardRequest)))
+                    .andDo(print())
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.cardId").value(cardResponse.cardId()))
+                    .andExpect(jsonPath("$.userId").value(cardResponse.userId()))
+                    .andExpect(jsonPath("$.cardNumber").value(cardResponse.cardNumber()))
+                    .andExpect(jsonPath("$.cardHolderName").value(cardResponse.cardHolderName()))
+                    .andExpect(jsonPath("$.status").value(cardResponse.status().toString()))
+                    .andExpect(jsonPath("$.balance").value(cardResponse.balance()))
+                    .andExpect(jsonPath("$.blockedReason").value(cardResponse.blockedReason()));
 
-    @Test
-    void deleteCard() {
-    }
-
-    @Test
-    void getAllCards() {
+            verify(cardService).createCard(any(CardRequest.class));
+        }
     }
 }
