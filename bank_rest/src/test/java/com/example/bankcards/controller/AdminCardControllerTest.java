@@ -4,7 +4,6 @@ import com.example.bankcards.dto.CardRequest;
 import com.example.bankcards.dto.CardResponse;
 import com.example.bankcards.entity.CardStatus;
 import com.example.bankcards.security.JwtAuthenticationFilter;
-import com.example.bankcards.security.JwtService;
 import com.example.bankcards.security.TestSecurityConfig;
 import com.example.bankcards.service.CardService;
 
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 
 import org.springframework.context.annotation.ComponentScan;
@@ -31,8 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -107,6 +104,28 @@ class AdminCardControllerTest {
                     .andExpect(jsonPath("$.blockedReason").value(cardResponse.blockedReason()));
 
             verify(cardService).createCard(any(CardRequest.class));
+        }
+
+        @Test
+        @DisplayName("Should return 400 when request is invalid")
+        void createCardInvalid()  throws Exception {
+            CardRequest invalidCardRequest = new CardRequest(
+                    "",
+                    "INVALID",
+                    null,
+                    CardStatus.ACTIVE,
+                    BigDecimal.valueOf(1000),
+                    "b",
+                    2L);
+
+            mockMvc.perform(post("/api/admin/cards")
+            .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(invalidCardRequest)))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors").exists());
+
+            verify(cardService, never()).createCard(any(CardRequest.class));
         }
     }
 }

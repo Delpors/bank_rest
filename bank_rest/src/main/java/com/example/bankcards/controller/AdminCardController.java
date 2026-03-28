@@ -9,15 +9,21 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.web.PagedModel;
 
 
+import javax.naming.Binding;
 import java.net.URI;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -30,22 +36,14 @@ public class AdminCardController {
     @PostMapping()
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CardResponse> createCard(@Valid @RequestBody CardRequest cardRequest){
-        log.info("Creating card: {}", cardRequest);
 
         CardResponse response = cardService.createCard(cardRequest);
-        log.info("Card created with ID: {}", response.cardId());
 
         URI location = URI.create("/api/admin/cards/" + response.cardId());
-        log.info("Location URI: {}", location);
 
-        ResponseEntity<CardResponse> responseEntity = ResponseEntity
+        return ResponseEntity
                 .created(location)
                 .body(response);
-
-        log.info("Response status: {}", responseEntity.getStatusCode());
-
-
-        return responseEntity;
     }
 
     @PutMapping("/{cardId}/block")
