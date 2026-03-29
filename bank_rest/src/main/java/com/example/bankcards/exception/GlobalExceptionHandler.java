@@ -1,6 +1,8 @@
 package com.example.bankcards.exception;
 
 import com.example.bankcards.dto.ErrorResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,12 +15,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CardNotFoundException.class)
     ResponseEntity<ErrorResponse> handleCardNotFound(CardNotFoundException e){
-
         ErrorResponse error = new ErrorResponse(e.getMessage());
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }

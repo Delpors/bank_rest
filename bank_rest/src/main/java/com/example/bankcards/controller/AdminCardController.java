@@ -48,7 +48,7 @@ public class AdminCardController {
 
     @PutMapping("/{cardId}/block")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CardResponse> blockCard(@PathVariable @NotNull Long cardId, @RequestBody BlockCardRequest request){
+    public ResponseEntity<CardResponse> blockCard(@PathVariable @NotNull Long cardId, @RequestBody @Valid BlockCardRequest request){
 
         return ResponseEntity
                 .ok()

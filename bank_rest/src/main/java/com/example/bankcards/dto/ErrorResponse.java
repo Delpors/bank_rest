@@ -1,13 +1,15 @@
 package com.example.bankcards.dto;
 
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
 
+@Getter
 public class ErrorResponse {
-    private String message;
-    private LocalDateTime time;
-    private int status;
+    private final String message;
+    private final LocalDateTime time;
+    private final int status;
 
     public ErrorResponse(String message){
         this.message = message;
