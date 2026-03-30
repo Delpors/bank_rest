@@ -3,6 +3,7 @@ package com.example.bankcards.controller;
 import com.example.bankcards.dto.UserRequest;
 import com.example.bankcards.dto.UserResponse;
 import com.example.bankcards.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,7 +31,7 @@ public class AdminUserController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    ResponseEntity<UserResponse> createUser(@RequestBody UserRequest user){
+    ResponseEntity<UserResponse> createUser(@RequestBody @Valid UserRequest user){
 
         UserResponse response = userService.createUser(user);
 
