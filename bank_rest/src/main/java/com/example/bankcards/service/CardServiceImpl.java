@@ -4,10 +4,7 @@ import com.example.bankcards.dto.*;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.Transaction;
 import com.example.bankcards.entity.User;
-import com.example.bankcards.exception.CardNotFoundException;
-import com.example.bankcards.exception.InsufficientFundsException;
-import com.example.bankcards.exception.UnauthorizedActionException;
-import com.example.bankcards.exception.UserNotFoundException;
+import com.example.bankcards.exception.*;
 import com.example.bankcards.repository.CardRepository;
 import com.example.bankcards.repository.TransactionRepository;
 import com.example.bankcards.repository.UserRepository;
@@ -37,7 +34,6 @@ public class CardServiceImpl implements CardService{
 
     @Transactional
     public CardResponse createCard(CardRequest request) {
-
         User user = userRepository.findById(request.userId())
                 .orElseThrow(()-> new UsernameNotFoundException
                         (String.format
@@ -74,14 +70,17 @@ public class CardServiceImpl implements CardService{
 
     @Transactional
     public CardResponse activateCard(Long cardId) {
+        log.info("Попытка активировать карту с id {}", cardId);
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(()->new CardNotFoundException(String.format("Карта с id %d не найдена", cardId)));
 
-        return cardRepository.findById(cardId)
-                .map(card -> {
-                    card.activate();
-                    return cardRepository.save(card);
-                })
-                .map(cardMapper::toCardResponse)
-                .orElseThrow(() -> new CardNotFoundException(String.format("Карта с id %d не найдена", cardId)));
+        if (card.isActive()) {
+            log.warn("Попытка активации уже активной карты: {}", cardId);
+            throw new CardAlreadyActiveException(String.format("Ошибка при активации карты %d, она уже активирована!",cardId));
+        }
+
+        card.activate();
+        return cardMapper.toCardResponse(card);
     }
 
     @Transactional

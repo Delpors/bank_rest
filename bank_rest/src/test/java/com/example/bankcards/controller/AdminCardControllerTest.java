@@ -4,6 +4,7 @@ import com.example.bankcards.dto.BlockCardRequest;
 import com.example.bankcards.dto.CardRequest;
 import com.example.bankcards.dto.CardResponse;
 import com.example.bankcards.entity.CardStatus;
+import com.example.bankcards.exception.CardAlreadyActiveException;
 import com.example.bankcards.exception.CardNotFoundException;
 import com.example.bankcards.security.JwtAuthenticationFilter;
 import com.example.bankcards.security.TestSecurityConfig;
@@ -23,6 +24,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 
 import org.springframework.security.test.context.support.WithMockUser;
@@ -32,6 +37,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -65,7 +71,7 @@ class AdminCardControllerTest {
     void setUp() {
         cardResponse = new CardResponse(
                 "12345678912345678912",
-                "Magomedov Magomed",
+                "Рашидов Сабир",
                 LocalDate.now(),
                 CardStatus.ACTIVE,
                 BigDecimal.valueOf(1000),
@@ -77,7 +83,7 @@ class AdminCardControllerTest {
 
         cardRequest = new CardRequest(
                 "12345678912345678912",
-                "Magomedov Magomed",
+                "Рашидов Сабир",
                 LocalDate.now(),
                 CardStatus.ACTIVE,
                 BigDecimal.valueOf(1000),
@@ -92,7 +98,7 @@ class AdminCardControllerTest {
     class CreateCardTests {
 
         @Test
-        @DisplayName("Should create card successfully and return 201")
+        @DisplayName("Должен успешно создать карту и вернуть 201")
         void createCardSuccessfully() throws Exception {
             when(cardService.createCard(any(CardRequest.class))).thenReturn(cardResponse);
 
@@ -113,7 +119,7 @@ class AdminCardControllerTest {
         }
 
         @Test
-        @DisplayName("Should return 400 when request is invalid")
+        @DisplayName("Должен вернуть 400 при неправильном запросе")
         void createCardInvalid() throws Exception {
             CardRequest invalidCardRequest = new CardRequest(
                     "",
@@ -136,7 +142,7 @@ class AdminCardControllerTest {
 
         @ParameterizedTest
         @MethodSource("provideInvalidCardRequests")
-        @DisplayName("Should validate card request fields")
+        @DisplayName("Должен проверить реквизиты карты")
         void validateCardRequestFields(CardRequest request, String expectedFields) throws Exception {
 
             mockMvc.perform(post("/api/admin/cards")
@@ -158,15 +164,15 @@ class AdminCardControllerTest {
     }
 
     @Nested
-    @DisplayName("PUT /api/admin/cards/{cardId}/block - Block Card")
+    @DisplayName("PUT /api/admin/cards/{cardId}/block - Заблокировать карту")
     class blockCardTest {
 
         @Test
-        @DisplayName("Should block card successfully and return 200")
+        @DisplayName("Должен заблокировать карту и вернуть 200")
         void blockCardSuccessfully() throws Exception {
 
             Long cardId = 1L;
-            String blockedReason = "Lost card";
+            String blockedReason = "Истек срок";
 
             CardResponse blockedResponse = new CardResponse(
                     cardResponse.cardNumber(),
@@ -197,7 +203,7 @@ class AdminCardControllerTest {
         }
 
         @Test
-        @DisplayName("Should return 400 when bloch reason is missing")
+        @DisplayName("Должен вернуть 400, если причина блокировки отсутствует")
         void blockCardInvalid() throws Exception {
             Long cardId = 1L;
 
@@ -210,13 +216,13 @@ class AdminCardControllerTest {
         }
 
         @Test
-        @DisplayName("Should return 404 when card not found")
+        @DisplayName("Должен вернуть 404 если карта не найдена")
         void blockCardNotFound() throws Exception {
             Long cardId = 100L;
-            BlockCardRequest blockCardRequest = new BlockCardRequest("Card not found");
+            BlockCardRequest blockCardRequest = new BlockCardRequest("Истек срок");
 
             when(cardService.blockCard(eq(cardId), anyString()))
-                    .thenThrow(new CardNotFoundException("Card not found with id " + cardId));
+                    .thenThrow(new CardNotFoundException("Карта не найдена. id " + cardId));
 
             mockMvc.perform(put("/api/admin/cards/{cardId}/block", cardId)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -228,9 +234,9 @@ class AdminCardControllerTest {
         }
 
         @Test
-        @DisplayName("Should return 400 when cardId is invalid")
+        @DisplayName("Должен вернуть 400 если id карты неправильный")
         void returnBadRequestWhenCardIdInvalid() throws Exception {
-            BlockCardRequest blockCardRequest = new BlockCardRequest("Lost card");
+            BlockCardRequest blockCardRequest = new BlockCardRequest("Срок истек");
 
             mockMvc.perform(put("/api/admin/cards/{cardId}/block", "invalid")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -243,11 +249,11 @@ class AdminCardControllerTest {
     }
 
     @Nested
-    @DisplayName("PUT /api/admin/cards/{cardId}/activate - Activate Card")
+    @DisplayName("PUT /api/admin/cards/{cardId}/activate - Активация карты")
     class ActivateCardTests {
 
         @Test
-        @DisplayName("Should activate card successfully and return 200")
+        @DisplayName("Должен активировать карту и вернуть 200")
         void shouldActivateCardSuccessfully() throws Exception {
             Long cardId = 1L;
 
@@ -265,18 +271,139 @@ class AdminCardControllerTest {
         }
 
         @Test
-        @DisplayName("Should return 409 when activating already active card")
+        @DisplayName("Должен вернуть 409 при попытке активации активной карты")
         void shouldReturnConflictWhenActivatingActiveCard() throws Exception {
             Long cardId = 1L;
 
             when(cardService.activateCard(eq(cardId)))
-                    .thenThrow(new IllegalStateException("Card is already active"));
+                    .thenThrow(new CardAlreadyActiveException("Card is already active"));
 
             mockMvc.perform(put("/api/admin/cards/{cardId}/activate", cardId)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isConflict());
 
             verify(cardService, times(1)).activateCard(eq(cardId));
+        }
+    }
+
+    @Nested
+    @DisplayName("DELETE /api/admin/cards/{cardId} - Delete Card")
+    class DeleteCardTests {
+
+        @Test
+        @DisplayName("Должен удалить карту и вернуть 204")
+        void DeleteCard() throws Exception {
+            Long cardId = 1L;
+            doNothing().when(cardService).deleteCard(eq(cardId));
+
+            mockMvc.perform(delete("/api/admin/cards/{cardId}", cardId))
+                    .andDo(print())
+                    .andExpect(status().isNoContent())
+                    .andExpect(content().string(""));
+
+            verify(cardService, times(1)).deleteCard(eq(cardId));
+        }
+
+        @Test
+        @DisplayName("Должен вернуть 404 при попытке удаления несуществующей карты")
+        void deletingNonExistentCard() throws Exception {
+            Long cardId = 999L;
+
+            doThrow(new CardNotFoundException("Карта не найдена id: " + cardId))
+                    .when(cardService).deleteCard(eq(cardId));
+
+            mockMvc.perform(delete("/api/admin/cards/{cardId}", cardId))
+                    .andExpect(status().isNotFound());
+
+            verify(cardService, times(1)).deleteCard(eq(cardId));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/admin/cards/all - Вернуть все карты")
+    class GetAllCardsTests {
+
+        @Test
+        @DisplayName("Должен вернуть список карт с пагинацией")
+        void returnPaginatedCards() throws Exception {
+
+            Pageable pageable = PageRequest.of(0, 10);
+            List<CardResponse> cards = List.of(
+                    cardResponse,
+                    new CardResponse(                "12115678912345678912",
+                            "Petrov Ivan",
+                            LocalDate.now(),
+                            CardStatus.ACTIVE,
+                            BigDecimal.valueOf(10),
+                            LocalDateTime.now(),
+                            "Срок истек",
+                            2L,
+                            3L)
+            );
+            Page<CardResponse> page = new PageImpl<>(cards, pageable, cards.size());
+
+            when(cardService.getAllCards(eq(null), any(Pageable.class)))
+                    .thenReturn(page);
+
+            mockMvc.perform(get("/api/admin/cards/all")
+                            .param("page", "0")
+                            .param("size", "10")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content").isArray())
+                    .andExpect(jsonPath("$.content.length()").value(2))
+                    .andExpect(jsonPath("$.content[0].cardId").value(1))
+                    .andExpect(jsonPath("$.content[1].cardId").value(2))
+                    .andExpect(jsonPath("$.page.size").value(10))
+                    .andExpect(jsonPath("$.page.number").value(0))
+                    .andExpect(jsonPath("$.page.totalElements").value(2));
+
+            verify(cardService, times(1)).getAllCards(eq(null), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("Должен вернуть карточки по поисковому запросу")
+        void returnFilteredCardsBySearch() throws Exception {
+
+            String searchQuery = "Сабир";
+            Pageable pageable = PageRequest.of(0, 10);
+            List<CardResponse> filteredCards = List.of(cardResponse);
+            Page<CardResponse> page = new PageImpl<>(filteredCards, pageable, filteredCards.size());
+
+            when(cardService.getAllCards(eq(searchQuery), any(Pageable.class)))
+                    .thenReturn(page);
+
+            mockMvc.perform(get("/api/admin/cards/all")
+                            .param("search", searchQuery)
+                            .param("page", "0")
+                            .param("size", "10"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content.length()").value(1))
+                    .andExpect(jsonPath("$.content[0].cardHolderName").value("Рашидов Сабир"))
+                    .andExpect(jsonPath("$.page.totalElements").value(1));
+
+            verify(cardService, times(1)).getAllCards(eq(searchQuery), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("Должен обработать результат пустой страницы")
+        void handleEmptyPageResult() throws Exception {
+            Pageable pageable = PageRequest.of(10, 10);
+            Page<CardResponse> emptyPage = Page.empty(pageable);
+
+            when(cardService.getAllCards(eq(null), any(Pageable.class)))
+                    .thenReturn(emptyPage);
+
+            mockMvc.perform(get("/api/admin/cards/all")
+                            .param("page", "10")
+                            .param("size", "10"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content").isArray())
+                    .andExpect(jsonPath("$.content.length()").value(0))
+                    .andExpect(jsonPath("$.page.totalElements").value(0));
+
+            verify(cardService, times(1)).getAllCards(eq(null), any(Pageable.class));
         }
     }
 }

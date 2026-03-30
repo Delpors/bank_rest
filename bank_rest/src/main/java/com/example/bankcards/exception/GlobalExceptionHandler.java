@@ -67,4 +67,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(CardAlreadyActiveException.class)
+    public ResponseEntity<ErrorResponse> handleCardAlreadyActiveException(Exception ex) {
+        ErrorResponse error = new ErrorResponse(ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
 }
