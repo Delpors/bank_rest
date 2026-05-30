@@ -177,6 +177,7 @@ public class AuthControllerTest {
             when(jwtService.generateToken(any(UserPrincipal.class))).thenReturn(TEST_TOKEN);
 
             ResponseEntity<AuthResponse> register = authController.register(registerRequest);
+
             assertThat(register).isNotNull();
             assertThat(register.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(register.getBody()).isNotNull();
@@ -185,7 +186,6 @@ public class AuthControllerTest {
             verify(userRepository).count();
             verify(userRepository).save(any(User.class));
             verify(jwtService).generateToken(any(UserPrincipal.class));
-
         }
     }
 }
