@@ -8,8 +8,8 @@ import com.example.bankcards.exception.CardAlreadyActiveException;
 import com.example.bankcards.exception.CardNotFoundException;
 import com.example.bankcards.security.JwtAuthenticationFilter;
 import com.example.bankcards.security.TestSecurityConfig;
-import com.example.bankcards.service.CardService;
 
+import com.example.bankcards.service.ICardService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -59,7 +59,7 @@ class AdminCardControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private CardService cardService;
+    private ICardService cardService;
 
     @Autowired
     private ObjectMapper objectMapper;

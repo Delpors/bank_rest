@@ -3,27 +3,18 @@ package com.example.bankcards.controller;
 import com.example.bankcards.dto.BlockCardRequest;
 import com.example.bankcards.dto.CardRequest;
 import com.example.bankcards.dto.CardResponse;
-import com.example.bankcards.service.CardService;
-import com.example.bankcards.service.CardServiceImpl;
+import com.example.bankcards.service.ICardService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.web.PagedModel;
-
-
-import javax.naming.Binding;
 import java.net.URI;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -31,7 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdminCardController {
 
-    private final CardService cardService;
+    private final ICardService cardService;
 
     @PostMapping()
     @PreAuthorize("hasRole('ADMIN')")

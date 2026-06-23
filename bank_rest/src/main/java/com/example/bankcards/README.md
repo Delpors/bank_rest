@@ -74,8 +74,6 @@ POST   /api/user/cards/transfer - перевод между картами
 Предварительные требования
 JDK 17 или выше
 
-PostgreSQL (локально или Docker)
-
 Maven
 
 IntelliJ IDEA (рекомендуется)

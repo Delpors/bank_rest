@@ -2,7 +2,7 @@ package com.example.bankcards.controller;
 
 import com.example.bankcards.dto.UserRequest;
 import com.example.bankcards.dto.UserResponse;
-import com.example.bankcards.service.UserService;
+import com.example.bankcards.service.IUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,7 +19,7 @@ import java.net.URI;
 @RequiredArgsConstructor
 public class AdminUserController {
 
-    private final UserService userService;
+    private final IUserService userService;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
