@@ -6,6 +6,7 @@ import com.example.bankcards.dto.TransactionRequest;
 import com.example.bankcards.dto.TransactionResponse;
 import com.example.bankcards.security.UserPrincipal;
 import com.example.bankcards.service.CardService;
+import com.example.bankcards.service.ICardService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,7 +22,7 @@ import java.math.BigDecimal;
 @RequestMapping("/api/user/cards")
 @RequiredArgsConstructor
 public class UserController {
-    private final CardService cardService;
+    private final ICardService cardService;
 
     @GetMapping()
     @PreAuthorize("hasRole('USER')")

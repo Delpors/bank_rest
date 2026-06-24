@@ -1,191 +1,225 @@
 package com.example.bankcards.controller;
 
 import com.example.bankcards.dto.AuthRequest;
-import com.example.bankcards.dto.AuthResponse;
 import com.example.bankcards.dto.RegisterRequest;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.entity.UserRole;
-import com.example.bankcards.exception.UserNotFoundException;
 import com.example.bankcards.repository.UserRepository;
+import com.example.bankcards.security.JwtAuthenticationFilter;
 import com.example.bankcards.security.JwtService;
+import com.example.bankcards.security.TestSecurityConfig;
 import com.example.bankcards.security.UserPrincipal;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("AuthController Test")
-public class AuthControllerTest {
+@WebMvcTest(value = AuthController.class,
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = JwtAuthenticationFilter.class
+        ))
+@Import(TestSecurityConfig.class)
+class AuthControllerTest {
 
-    @Mock
-    AuthenticationManager  authenticationManager;
-    @Mock
-    UserRepository userRepository;
-    @Mock
-    JwtService jwtService;
-    @Mock
-    PasswordEncoder passwordEncoder;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @InjectMocks
-    AuthController authController;
+    @MockitoBean
+    private AuthenticationManager authenticationManager;
 
-    private User testUser;
-    private AuthRequest authRequest;
-    private RegisterRequest registerRequest;
-    private final String TEST_TOKEN = "test.jwt.token";
-    private final String TEST_USERNAME = "testuser";
-    private final String TEST_PASSWORD = "password123";
-    private final String TEST_FULL_NAME = "Test User";
-    private final String TEST_EMAIL = "test@example.com";
+    @MockitoBean
+    private UserRepository userRepository;
+
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private final String validUsername = "john_doe";
+    private final String validPassword = "password123";
+    private final String validFullName = "John Doe";
+    private final String validEmail = "john@example.com";
+    private final String mockToken = "mock.jwt.token";
+    private User sampleUser;
 
     @BeforeEach
     void setUp() {
-        testUser = new User(
-                TEST_USERNAME,
-                TEST_PASSWORD,
-                TEST_FULL_NAME,
-                TEST_EMAIL,
-                UserRole.USER,
-                null
-        );
-
-        authRequest = new AuthRequest(TEST_USERNAME, TEST_PASSWORD);
-
-        registerRequest = new RegisterRequest(
-                TEST_USERNAME,
-                TEST_PASSWORD,
-                TEST_FULL_NAME,
-                TEST_EMAIL
-        );
+        sampleUser = new User();
+        sampleUser.setUserName(validUsername);
+        sampleUser.setPassword("encodedPassword");
+        sampleUser.setFullName(validFullName);
+        sampleUser.setEmail(validEmail);
+        sampleUser.setRol(UserRole.USER);
     }
 
-    @Nested
-    @DisplayName("Тестирование авторизации")
-    class loginTest {
+    @Test
+    void login_success_returnsAuthResponse() throws Exception {
 
-        @Test
-        void login_WithValidCredentials(){
+        AuthRequest request = new AuthRequest(validUsername, validPassword);
+        Authentication authentication = mock(Authentication.class);
 
-            when(userRepository.findByUserName(TEST_USERNAME))
-                    .thenReturn(Optional.of(testUser));
-            when(jwtService.generateToken(any(UserPrincipal.class)))
-                    .thenReturn(TEST_TOKEN);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(authentication);
+        when(userRepository.findByUserName(validUsername)).thenReturn(Optional.of(sampleUser));
+        when(jwtService.generateToken(any(UserPrincipal.class))).thenReturn(mockToken);
 
-            ResponseEntity<AuthResponse> response = authController.login(authRequest);
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value(mockToken))
+                .andExpect(jsonPath("$.userName").value(validUsername))
+                .andExpect(jsonPath("$.fullName").value(validFullName))
+                .andExpect(jsonPath("$.role").value(UserRole.USER.toString()));
 
-            assertThat(response).isNotNull();
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().token()).isEqualTo(TEST_TOKEN);
-            assertThat(response.getBody().userName()).isEqualTo(TEST_USERNAME);
-            assertThat(response.getBody().fullName()).isEqualTo(TEST_FULL_NAME);
-            assertThat(response.getBody().role()).isEqualTo(UserRole.USER.toString());
-
-            verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-            verify(userRepository).findByUserName(TEST_USERNAME);
-            verify(jwtService).generateToken(any(UserPrincipal.class));
-        }
-
-        @Test
-        @DisplayName("Должен вернуть UsernameNotFoundException если пользователь не найден")
-        void login_WithNonExistentUser(){
-
-            when(userRepository.findByUserName(TEST_USERNAME)).thenReturn(Optional.empty());
-
-            assertThrows(UsernameNotFoundException.class, () -> authController.login(authRequest));
-
-            verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-            verify(userRepository).findByUserName(TEST_USERNAME);
-            verify(jwtService, never()).generateToken(any());
-        }
-
-        @Test
-        @DisplayName("Должен обрабатывать сбой аутентификации")
-        void login_WithInvalidCredentials(){
-
-            doThrow(new RuntimeException())
-                    .when(authenticationManager)
-                    .authenticate(any(UsernamePasswordAuthenticationToken.class));
-
-            assertThrows(RuntimeException.class, () -> authController.login(authRequest));
-
-            verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-            verify(userRepository, never()).findByUserName(anyString());
-            verify(jwtService, never()).generateToken(any());
-        }
-
-        @Test
-        @DisplayName("Должен обрабатывать пустое имя пользователя")
-        void login_WithNullUsername(){
-
-            AuthRequest authRequest = new AuthRequest(null, TEST_PASSWORD);
-            assertThrows(Exception.class, () -> authController.login(authRequest));
-        }
+        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verify(userRepository).findByUserName(validUsername);
+        verify(jwtService).generateToken(any(UserPrincipal.class));
     }
 
-    @Nested
-    @DisplayName("Register Endpoint Tests")
-    class RegisterTests {
+    @Test
+    void login_badCredentials_returnsUnauthorized() throws Exception {
 
-        @Test
-        @DisplayName("Должен успешно зарегистрировать первого пользователя как ADMIN")
-        void register_FirstUser(){
+        AuthRequest request = new AuthRequest(validUsername, "wrongPassword");
 
-            when(userRepository.count()).thenReturn(0L);
-            when(userRepository.save(any(User.class))).thenReturn(testUser);
-            when(jwtService.generateToken(any(UserPrincipal.class))).thenReturn(TEST_TOKEN);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenThrow(new BadCredentialsException("Invalid credentials"));
 
-            ResponseEntity<AuthResponse> response =  authController.register(registerRequest);
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
 
-            assertThat(response).isNotNull();
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().token()).isEqualTo(TEST_TOKEN);
-            assertThat(response.getBody().role()).isEqualTo(UserRole.ADMIN.toString());
+        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verify(userRepository, never()).findByUserName(anyString());
+        verify(jwtService, never()).generateToken(any());
+    }
 
-            verify(userRepository).count();
-            verify(userRepository).save(any(User.class));
-            verify(jwtService).generateToken(any(UserPrincipal.class));
+    @Test
+    void login_userNotFound_returnsNotFound() throws Exception {
 
-        }
+        AuthRequest request = new AuthRequest(validUsername, validPassword);
 
-        @Test
-        @DisplayName("Should successfully register subsequent user as USER")
-        void register_SubsequentUser(){
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(mock(Authentication.class));
+        when(userRepository.findByUserName(validUsername)).thenReturn(Optional.empty());
 
-            when(userRepository.count()).thenReturn(1L);
-            when(userRepository.save(any(User.class))).thenReturn(testUser);
-            when(jwtService.generateToken(any(UserPrincipal.class))).thenReturn(TEST_TOKEN);
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
 
-            ResponseEntity<AuthResponse> register = authController.register(registerRequest);
+        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verify(userRepository).findByUserName(validUsername);
+        verify(jwtService, never()).generateToken(any());
+    }
 
-            assertThat(register).isNotNull();
-            assertThat(register.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(register.getBody()).isNotNull();
-            assertThat(register.getBody().role()).isEqualTo(UserRole.USER.toString());
+    @Test
+    void register_firstUser_setsAdminRoleAndReturnsAuthResponse() throws Exception {
 
-            verify(userRepository).count();
-            verify(userRepository).save(any(User.class));
-            verify(jwtService).generateToken(any(UserPrincipal.class));
-        }
+        RegisterRequest request = new RegisterRequest(validUsername, validPassword, validFullName, validEmail);
+
+        when(userRepository.count()).thenReturn(0L);
+        when(passwordEncoder.encode(validPassword)).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User saved = invocation.getArgument(0);
+            saved.setUserName(validUsername);
+            saved.setFullName(validFullName);
+            saved.setEmail(validEmail);
+            saved.setRol(UserRole.ADMIN);
+            return saved;
+        });
+        when(jwtService.generateToken(any(UserPrincipal.class))).thenReturn(mockToken);
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value(mockToken))
+                .andExpect(jsonPath("$.userName").value(validUsername))
+                .andExpect(jsonPath("$.fullName").value(validFullName))
+                .andExpect(jsonPath("$.role").value(UserRole.ADMIN.toString()));
+
+        verify(userRepository).count();
+        verify(passwordEncoder).encode(validPassword);
+        verify(userRepository).save(any(User.class));
+        verify(jwtService).generateToken(any(UserPrincipal.class));
+    }
+
+    @Test
+    void register_nonFirstUser_setsUserRoleAndReturnsAuthResponse() throws Exception {
+
+        RegisterRequest request = new RegisterRequest(validUsername, validPassword, validFullName, validEmail);
+
+        when(userRepository.count()).thenReturn(1L);
+        when(passwordEncoder.encode(validPassword)).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User saved = invocation.getArgument(0);
+            saved.setUserName(validUsername);
+            saved.setFullName(validFullName);
+            saved.setEmail(validEmail);
+            saved.setRol(UserRole.USER);
+            return saved;
+        });
+        when(jwtService.generateToken(any(UserPrincipal.class))).thenReturn(mockToken);
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value(mockToken))
+                .andExpect(jsonPath("$.userName").value(validUsername))
+                .andExpect(jsonPath("$.fullName").value(validFullName))
+                .andExpect(jsonPath("$.role").value(UserRole.USER.toString()));
+
+        verify(userRepository).count();
+        verify(passwordEncoder).encode(validPassword);
+        verify(userRepository).save(any(User.class));
+        verify(jwtService).generateToken(any(UserPrincipal.class));
+    }
+
+    @Test
+    void register_duplicateUser_returnsInternalServerError() throws Exception {
+
+        RegisterRequest request = new RegisterRequest(validUsername, validPassword, validFullName, validEmail);
+
+        when(userRepository.count()).thenReturn(1L);
+        when(passwordEncoder.encode(validPassword)).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenThrow(new DataIntegrityViolationException("Duplicate user"));
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isInternalServerError());
+
+        verify(userRepository).count();
+        verify(passwordEncoder).encode(validPassword);
+        verify(userRepository).save(any(User.class));
+        verify(jwtService, never()).generateToken(any());
     }
 }

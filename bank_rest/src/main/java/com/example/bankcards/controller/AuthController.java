@@ -5,6 +5,7 @@ import com.example.bankcards.dto.AuthResponse;
 import com.example.bankcards.dto.RegisterRequest;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.entity.UserRole;
+import com.example.bankcards.exception.UserNotFoundException;
 import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.security.JwtService;
 import com.example.bankcards.security.UserPrincipal;
@@ -34,7 +35,7 @@ public class AuthController {
 
         User user = userRepository.findByUserName(request.userName())
                 .orElseThrow(
-                        ()-> new UsernameNotFoundException
+                        ()-> new UserNotFoundException
                                 (String.format("Пользователь с именем %s, не найден", request.userName())));
 
         String token = jwtService.generateToken(new UserPrincipal(user));
