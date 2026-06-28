@@ -1,14 +1,10 @@
 package com.example.bankcards.security;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -116,7 +112,6 @@ class JwtServiceTest {
         boolean valid = jwtService.isTokenValid(token, userDetails);
 
         assertThat(valid).isFalse();
-
         ReflectionTestUtils.setField(jwtService, "expiration", EXPIRATION_MS);
     }
 

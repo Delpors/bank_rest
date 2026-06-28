@@ -27,6 +27,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class CardService implements ICardService{
+
     private final CardRepository cardRepository;
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
@@ -34,11 +35,13 @@ public class CardService implements ICardService{
 
     @Transactional
     public CardResponse createCard(CardRequest request) {
+
+        log.info("Попытка создать карту для пользователя с id: {}",request.userId());
+
         User user = userRepository.findById(request.userId())
                 .orElseThrow(()-> new UsernameNotFoundException
                         (String.format
                                 ("Пользователь с id %s не найден", request.userId())));
-
 
         Card savedCard = cardRepository.save(
                 new Card(
@@ -59,6 +62,7 @@ public class CardService implements ICardService{
     public CardResponse blockCard(Long cardId, String blockReason) {
 
         log.info("Попытка блокировки карты {}. Причина {}.", cardId, blockReason);
+
         return cardRepository.findById(cardId)
                 .map(card -> {
                     card.block(blockReason);
@@ -70,7 +74,9 @@ public class CardService implements ICardService{
 
     @Transactional
     public CardResponse activateCard(Long cardId) {
+
         log.info("Попытка активировать карту с id {}", cardId);
+
         Card card = cardRepository.findById(cardId)
                 .orElseThrow(()->new CardNotFoundException(String.format("Карта с id %d не найдена", cardId)));
 
@@ -86,6 +92,8 @@ public class CardService implements ICardService{
     @Transactional
     public void deleteCard(Long cardId) {
 
+        log.info("Попытка удалить карту с id {}", cardId);
+
         Card existingCard = cardRepository
                 .findById(cardId)
                 .orElseThrow(()->new CardNotFoundException(String.format("Карта с id %d не найдена!", cardId)));
@@ -95,18 +103,19 @@ public class CardService implements ICardService{
             return;
         }
 
-        log.info("Карта с id {} удалена!",cardId);
         existingCard.setDeleted(true);
-
+        log.info("Карта с id {} удалена!",cardId);
     }
 
     public Page<CardResponse> getAllCards(String search, Pageable pageable) {
-
+        log.info("Получить список всех карт пользователей");
         Page<Card> cards = cardRepository.searchCards(search, pageable);
         return cards.map(cardMapper::toCardResponse);
     }
 
     public Page<CardResponse> getAllUsersCards(Long userId, String search, Pageable pageable) {
+
+        log.info("Получить список всех карт пользователя с id: {}", userId);
 
         Page<Card> cards;
 
@@ -124,6 +133,7 @@ public class CardService implements ICardService{
 
     public BigDecimal getTotalBalance(Long userid) {
 
+        log.info("Получить общий баланс пользователя с id: {}", userid);
         return cardRepository.findByUserId(userid)
                 .stream()
                 .map(Card::getBalance)
@@ -152,7 +162,8 @@ public class CardService implements ICardService{
     @Transactional
     public TransactionResponse transferBetweenCards(Long userId, TransactionRequest request) {
 
-        log.info("Попытка перевода средств с карты {} на карту {}", request.fromCardId(), request.toCardId());
+        log.info("Попытка перевода средств с карты {} на карту {} пользователя с id: {}",
+                request.fromCardId(), request.toCardId(), userId);
 
         try {
             Card fromCard = cardRepository.findById(request.fromCardId())
@@ -160,11 +171,9 @@ public class CardService implements ICardService{
             Card toCard = cardRepository.findById(request.toCardId())
                     .orElseThrow(()-> new CardNotFoundException(String.format("Карта с id %d не найдена", request.toCardId())));
 
-
             if (fromCard.getBalance().compareTo(request.amount()) < 0) {
                 throw new InsufficientFundsException(fromCard.getId(), fromCard.getBalance(), request.amount());
             }
-
 
             if (!fromCard.getUser().getId().equals(toCard.getUser().getId())){
                 throw new AccessDeniedException("Карты не принадлежат одному пользователю");
@@ -185,6 +194,9 @@ public class CardService implements ICardService{
     @Transactional
     public TransactionResponse createTransaction(Card fromCard, Card toCard, TransactionRequest request){
 
+        log.info("Попытка сохранить транзакцию по картам {}, {}",
+                fromCard.getCardNumber(), toCard.getCardNumber());
+
         Transaction transaction = new Transaction();
         transaction.setTransactionNumber(generateTransactionNumber());
         transaction.setFromCard(fromCard);
@@ -197,7 +209,6 @@ public class CardService implements ICardService{
     private String generateTransactionNumber() {
         return "TRN" + UUID.randomUUID().toString();
     }
-
 }
 
 

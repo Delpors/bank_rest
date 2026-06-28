@@ -24,19 +24,26 @@ public class UserService implements IUserService {
 
     public Page<UserResponse> getAllUsers(Pageable pageable)
     {
+        log.info("Получить список всех пользователей");
+
         Page<User> users = userRepository.findAllByActiveTrue(pageable);
         return users.map(userMapper::toUserResponse);
     }
 
     @Transactional
     public UserResponse createUser(UserRequest userRequest) {
+
+        log.info("Попытка создать пользователя {}",userRequest.userName());
+
         User user = userMapper.tuEntity(userRequest);
+        log.info("пользователь {}, успешно сохранен в базу данных",userRequest.userName());
         return userMapper.toUserResponse(user);
     }
 
     @Transactional
     public UserResponse blockUser(Long userId) {
 
+        log.info("Попытка заблокировать пользователя с id: {}",userId);
         User user = getUserById(userId);
 
         if (!user.isActive()){
@@ -45,12 +52,14 @@ public class UserService implements IUserService {
         }
 
         user.setActive(false);
+        log.info("Пользователя с id: {}, успешно заблокирован.",userId);
         return userMapper.toUserResponse(user);
     }
 
     @Transactional
     public UserResponse activateUser(Long userId) {
 
+        log.info("Попытка активировать пользователя с id: {}",userId);
         User user = getUserById(userId);
 
         if (user.isActive()){
@@ -59,12 +68,14 @@ public class UserService implements IUserService {
         }
 
         user.setActive(true);
+        log.info("Пользователя с id: {}, успешно активирован.",userId);
         return userMapper.toUserResponse(user);
     }
 
     @Transactional
     public void deleteUser(@NotNull Long userId) {
 
+        log.info("Попытка удалить пользователя с id: {}",userId);
         User existUser = userRepository
                 .findById(userId)
                 .orElseThrow(()-> new UserNotFoundException(String.format("Пользователь с id %d не найден!", userId)));
@@ -75,6 +86,7 @@ public class UserService implements IUserService {
         }
 
         existUser.setDeleted(true);
+        log.info("Пользователя с id: {}, удален.",userId);
     }
 
     public User getUserById(Long userId) {
