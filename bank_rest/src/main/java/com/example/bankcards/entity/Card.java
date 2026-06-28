@@ -54,6 +54,7 @@ public class Card extends BaseEntity{
     public void block(String blockReason){
         this.status = CardStatus.BLOCKED;
         this.blockedAt = LocalDateTime.now();
+        this.blockReason = blockReason;
     }
 
     public void activate(){

@@ -1,14 +1,18 @@
 package com.example.bankcards.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
 @MappedSuperclass
 @Getter
 @Setter
+@Data
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
 public abstract class BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,11 +30,11 @@ public abstract class BaseEntity {
     private LocalDateTime updatedAt;
 
     public Boolean isActive(){
-        return active && !deleted;
+        return active;
     }
 
     public Boolean isDeleted(){
-        return !deleted;
+        return deleted;
     }
 
     @PreUpdate
